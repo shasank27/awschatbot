@@ -1,4 +1,5 @@
 import boto3
+from pprint import pprint
 
 aws_mngmnt = boto3.session.Session(profile_name="default")
 iam_cnsl = aws_mngmnt.resource("iam")
@@ -36,3 +37,33 @@ for reservation in response["Reservations"]:
         instances.append({"Instance ID": instance_id, "Name": name})
 
 print(instances)
+
+# Create ec2 instance
+# res = ec2.run_instances(
+#     ImageId = 'ami-0e35ddab05955cf57',
+#     InstanceType = 't2.micro',
+#     MaxCount = 1,
+#     MinCount = 1,
+#     TagSpecifications=[
+#         {
+#             "ResourceType": "instance",
+#             "Tags": [
+#                 {"Key": "Name", "Value": "createdfromboto3"}
+#             ]
+#         }
+#     ]
+# )
+# print("Bucket created- ", res)
+
+s3_client = aws_mngmnt.client("s3")
+
+# s3_list_res = s3_client.list_objects(Bucket = 'shasank-bucket')
+# pprint(s3_list_res)
+
+s3_get_res = s3_client.get_object(Bucket = 'shasank-bucket', Key= 'to_download/download.jpeg')
+pprint(s3_get_res['Body'])
+
+content = s3_get_res['Body'].read()
+# pprint(content)
+# with open("downloadedfroms3.jpg", "wb") as f:
+#     f.write(content)
