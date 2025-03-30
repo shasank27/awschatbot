@@ -3,6 +3,7 @@ import dotenv
 import boto3
 from pprint import pprint
 dotenv.load_dotenv()
+from langchain import hub
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_react_agent, AgentExecutor
@@ -11,10 +12,11 @@ from langchain.tools import Tool
 
 aws_mngmnt = boto3.session.Session(profile_name="default")
 
-def listec2instance():
+def listec2instance(*args):
     """
     This function returns the name and id of all running EC2 instances.
     """
+    # print("Called List EC2 instances, with these args-", args)
     ec2 = aws_mngmnt.client("ec2")
     response = ec2.describe_instances(
         Filters=[{"Name": "instance-state-name", "Values": ["running"]}]
@@ -29,10 +31,10 @@ def listec2instance():
                 "Unnamed Instance",
             )
             instances.append({"Instance ID": instance_id, "Name": name})
-    pprint(instances)
+    # pprint(instances)
     return instances
 
-def createec2instance():
+def createec2instance(name: str):
     """
     This function creates an EC2 instance.
     """
@@ -45,7 +47,7 @@ def createec2instance():
         TagSpecifications=[
             {
                 "ResourceType": "instance",
-                "Tags": [{"Key": "Name", "Value": "createdfromboto3"}]
+                "Tags": [{"Key": "Name", "Value": f"{name}"}]
             }
         ]
     )
@@ -85,12 +87,17 @@ if __name__ == "__main__":
 
     llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.0-flash", verbose=True)
 
-    _query = "List all the active EC2 instances."
+    # _query = "List all the active EC2 instances."
+    # _query = "Mere jitne EC2 instances hai woh batao."
+    # _query = "Make an EC2 instance with the name shasankperiwal."
+    # _query = "Ek EC2 instance banana boto3 naam se sirf boto3 hi naam rakhna aur kuch nahi ok?."
+    _query = "woh boto3 naam wala ec2 instance delete kar dena pls"
     
     # chain = prompt_template | llm 
     # result = chain.invoke(input={"query":_query})
 
-    agent = create_react_agent(tools=tools_for_agent, llm=llm)
+    prompt_template = hub.pull("hwchase17/react")
+    agent = create_react_agent(tools=tools_for_agent, llm=llm, prompt=prompt_template)
     agent_executor = AgentExecutor(agent=agent, tools=tools_for_agent, verbose=True)
 
     result = agent_executor.invoke({"input": _query})
