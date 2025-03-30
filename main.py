@@ -1,5 +1,6 @@
 import os
 import dotenv
+import json
 import boto3
 from pprint import pprint
 dotenv.load_dotenv()
@@ -38,6 +39,8 @@ def createec2instance(name: str):
     """
     This function creates an EC2 instance.
     """
+    name = name.split(':')[-1].strip()
+    # print("Name to be created with- ",name)
     ec2 = aws_mngmnt.client("ec2")
     res = ec2.run_instances(
         ImageId='ami-0e35ddab05955cf57',
@@ -47,7 +50,7 @@ def createec2instance(name: str):
         TagSpecifications=[
             {
                 "ResourceType": "instance",
-                "Tags": [{"Key": "Name", "Value": f"{name}"}]
+                "Tags": [{"Key": "Name", "Value": name}]
             }
         ]
     )
@@ -64,41 +67,23 @@ def stopec2instance(instance_id):
 if __name__ == "__main__":
     print("Let's get this started")
 
-    _template = """
-    You know Hindi and English language.
-    You have tools to perform actions on AWS account.
-    Based on the user's query you need to perform those actions using the one or more tools.
-    Perform the requested action using the tool only and return results in a structured format.
-    Use JSON format for structured data.
-
-    Question: {query}
-    """
-
-    prompt_template = PromptTemplate(
-        input_variables = ["query"], 
-        template = _template
-    )
-
     tools_for_agent = [
         Tool(name="List EC2 Instances", func=listec2instance, description="Gets all running EC2 instances"),
         Tool(name="Create EC2 Instance", func=createec2instance, description="Creates an EC2 instance."),
         Tool(name="Stop EC2 Instance", func=stopec2instance, description="Stops an EC2 instance given an ID."),
     ]
 
-    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.0-flash", verbose=True)
+    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.0-flash")
 
     # _query = "List all the active EC2 instances."
-    # _query = "Mere jitne EC2 instances hai woh batao."
+    _query = "Mere jitne EC2 instances hai woh batao."
     # _query = "Make an EC2 instance with the name shasankperiwal."
-    # _query = "Ek EC2 instance banana boto3 naam se sirf boto3 hi naam rakhna aur kuch nahi ok?."
-    _query = "woh boto3 naam wala ec2 instance delete kar dena pls"
+    # _query = "Ek EC2 instance banana shasankperiwal2 naam se."
+    # _query = "woh shasankperiwal naam wala ec2 instance delete kar dena pls"
     
-    # chain = prompt_template | llm 
-    # result = chain.invoke(input={"query":_query})
-
     prompt_template = hub.pull("hwchase17/react")
     agent = create_react_agent(tools=tools_for_agent, llm=llm, prompt=prompt_template)
-    agent_executor = AgentExecutor(agent=agent, tools=tools_for_agent, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools_for_agent)
 
     result = agent_executor.invoke({"input": _query})
-    pprint(result)
+    pprint(result["output"])
