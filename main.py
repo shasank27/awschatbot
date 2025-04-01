@@ -76,12 +76,35 @@ if __name__ == "__main__":
     llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.0-flash")
 
     # _query = "List all the active EC2 instances."
-    _query = "Mere jitne EC2 instances hai woh batao."
+    # _query = "Mere jitne EC2 instances hai woh batao."
     # _query = "Make an EC2 instance with the name shasankperiwal."
     # _query = "Ek EC2 instance banana shasankperiwal2 naam se."
-    # _query = "woh shasankperiwal naam wala ec2 instance delete kar dena pls"
+    _query = "woh shasankperiwal naam wala ec2 instance delete kar dena pls"
     
-    prompt_template = hub.pull("hwchase17/react")
+    _template = """
+    Answer the following questions as best you can. Make sure the Final Answer is in the same language as the user asked in. You have access to the following tools:
+
+    {tools}
+
+    Use the following format:
+
+    Question: the input question you must answer
+    Thought: you should always think about what to do
+    Action: the action to take, should be one of [{tool_names}]
+    Action Input: the input to the action
+    Observation: the result of the action
+    ... (this Thought/Action/Action Input/Observation can repeat N times)
+    Thought: I now know the final answer
+    Final Answer: the final answer to the original input question
+
+    Begin!
+
+    Question: {input}
+    Thought:{agent_scratchpad}
+    """
+
+    prompt_template = PromptTemplate(input_variables = ["query"], template = _template)
+    
     agent = create_react_agent(tools=tools_for_agent, llm=llm, prompt=prompt_template)
     agent_executor = AgentExecutor(agent=agent, tools=tools_for_agent)
 
