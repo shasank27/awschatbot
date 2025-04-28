@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant User as WhatsApp User
+    participant WhatsApp
+    participant Twilio
+    participant APIGateway as AWS API Gateway
+    participant Lambda as AWS Lambda (Python)
+    participant Langchain as Langchain Agent (within Lambda)
+    participant Boto3 as Boto3 (within Lambda)
+    participant EC2 as AWS EC2
+
+    User->>+WhatsApp: Sends message (e.g., "List EC2 instances")
+    WhatsApp->>+Twilio: Forwards message
+    Twilio->>+APIGateway: POST Request (Webhook) with message body
+    APIGateway->>+Lambda: Triggers Lambda function with event data
+    Lambda->>Lambda: Parses Twilio request
+    Lambda->>+Langchain: Invokes agent with message text
+    Langchain->>Langchain: Analyzes request, decides tool (e.g., "List EC2 Instances")
+    Langchain->>+Boto3: Calls corresponding function (e.g., listec2instance)
+    Boto3->>+EC2: Makes API call (e.g., DescribeInstances)
+    EC2-->>-Boto3: Returns instance data
+    Boto3-->>-Langchain: Returns function result (list of instances)
+    Langchain->>Langchain: Formulates natural language response
+    Langchain-->>-Lambda: Returns final text response
+    Lambda->>Lambda: Formats response in TwiML (XML)
+    Lambda-->>-APIGateway: Returns TwiML response
+    APIGateway-->>-Twilio: Forwards TwiML response
+    Twilio->>-WhatsApp: Sends formatted message
+    WhatsApp-->>-User: Displays response

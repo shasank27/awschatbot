@@ -1,24 +1,20 @@
 import os
-import dotenv
 import json
 import boto3
 from pprint import pprint
-dotenv.load_dotenv()
 from langchain import hub
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_react_agent, AgentExecutor
-# from langgraph.prebuilt import create_react_agent
 from langchain.tools import Tool
 
-aws_mngmnt = boto3.session.Session(profile_name="default")
 
 def listec2instance(*args):
     """
     This function returns the name and id of all running EC2 instances.
     """
     # print("Called List EC2 instances, with these args-", args)
-    ec2 = aws_mngmnt.client("ec2")
+    ec2 = boto3.client("ec2")
     response = ec2.describe_instances(
         Filters=[{"Name": "instance-state-name", "Values": ["running"]}]
     )
@@ -41,7 +37,7 @@ def createec2instance(name: str):
     """
     name = name.split(':')[-1].strip()
     # print("Name to be created with- ",name)
-    ec2 = aws_mngmnt.client("ec2")
+    ec2 = boto3.client("ec2")
     res = ec2.run_instances(
         ImageId='ami-0e35ddab05955cf57',
         InstanceType='t2.micro',
@@ -60,12 +56,11 @@ def stopec2instance(instance_id):
     """
     This function stops an EC2 instance.
     """
-    ec2 = aws_mngmnt.client("ec2")
+    ec2 = boto3.client("ec2")
     response = ec2.stop_instances(InstanceIds=[instance_id])
     return {"Message": "Instance stopped", "Instance ID": instance_id}
 
-if __name__ == "__main__":
-    print("Let's get this started")
+def getmyagent(_query):
 
     tools_for_agent = [
         Tool(name="List EC2 Instances", func=listec2instance, description="Gets all running EC2 instances"),
@@ -73,14 +68,12 @@ if __name__ == "__main__":
         Tool(name="Stop EC2 Instance", func=stopec2instance, description="Stops an EC2 instance given an ID."),
     ]
 
-    llm = ChatGoogleGenerativeAI(temperature=0, model="gemini-2.0-flash")
+    llm = ChatGoogleGenerativeAI(
+        temperature=0,
+        model="gemini-2.0-flash",
+        google_api_key=os.environ["GOOGLE_API_KEY"]
+    )
 
-    # _query = "List all the active EC2 instances."
-    # _query = "Mere jitne EC2 instances hai woh batao."
-    # _query = "Make an EC2 instance with the name shasankperiwal."
-    # _query = "Ek EC2 instance banana shasankperiwal2 naam se."
-    _query = "woh shasankperiwal naam wala ec2 instance delete kar dena pls"
-    
     _template = """
     Answer the following questions as best you can. Make sure the Final Answer is in the same language as the user asked in. You have access to the following tools:
 
@@ -110,3 +103,4 @@ if __name__ == "__main__":
 
     result = agent_executor.invoke({"input": _query})
     pprint(result["output"])
+    return result["output"]
