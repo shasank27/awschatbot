@@ -2,7 +2,7 @@
 
 A chatbot project designed to interact with AWS services with Whatsapp. This repository contains the source code, configuration, and scripts required to deploy and run the AWS Chatbot.
 
-<img src="image.png" style="width: 900px;" alt="Working in action">
+<img src="assets/image.png" style="width: 900px;" alt="Working in action">
 
 
 ## Project Structure
@@ -18,6 +18,7 @@ awschatbot/
 │   └── requirements.txt
 └── assests/
     ├── sequenceDiagram
+    ├── image.png
     └── architecture.png
 ```
 
